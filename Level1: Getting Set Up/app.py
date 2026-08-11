@@ -1,4 +1,13 @@
-# This is a generic system prompt. Treat it like a template, and modify it to showcase the way you want your twin to communicate.
+#imports
+import os 
+from openai import OpenAI
+from dotenv import load_dotenv
+import gradio as gr
+
+load_dotenv()
+OPENAI_API_KEY= os.getenv("OPENAI_API_KEY")
+client = OpenAI()
+
 
 def system_prompt():
     return """
@@ -24,3 +33,13 @@ def system_prompt():
               ???
               
         """
+
+def respond_basic(message,history):
+    messages = [{"role": "system", "content": system_prompt()}] +  history + [{"role": "user", "content": message}]
+    response = client.chat.completions.create(
+        messages = messages,
+        model="gpt-4.1-mini"
+    )
+    return response.choices[0].message.content
+
+gr.ChatInterface(fn=respond_basic).launch()
