@@ -9,7 +9,7 @@ This project was created in response to Hugging Face's abrupt decision to charge
  
 One member of the Hugging Face community put together a great [list of alternatives](https://discuss.huggingface.co/t/official-community-complaint-revert-free-cpu-basic-spaces-and-remove-anti-developer-sdk-restrictions/177703/10#p-260365-h-1-streamlit-community-cloud-streamlitiocloud-1) for hosting a digital twin/chatbot, but none of them are built for scalable, out-of-the-box use. Instead, they're primarily hosting solutions like Hugging Face. But you'll still have to write all the code to make the hosting work, and it may or may not scale well, be secure, or have the functionality you want.
  
-With this project, we aim to address all those concerns, so that all you need to do is follow the steps in the Deploy.md guide and you'll have your own production build ready in less than a day.
+With this project, we aim to address all those concerns, so that all you need to do is follow the steps in the Deployment guide and you'll have your own production build ready in less than a day.
  
 ## Notes on Architecture
  
