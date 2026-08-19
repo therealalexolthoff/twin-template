@@ -9,4 +9,10 @@ dependencies = [
     "gradio>=4.0.0",
     "requests>=2.28.0",
     "dotenv>=0.9.9",
+    "google-genai>=2.18.1",
+]
+
+[tool.uv.workspace]
+members = [
+    "chunking",
 ]
