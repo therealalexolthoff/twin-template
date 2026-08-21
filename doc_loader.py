@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 
-
 def prep_docs():
 
     docs_bucket = os.environ.get("DOCS_BUCKET")
@@ -27,3 +26,4 @@ def prep_docs():
             with file_path.open("r") as file:
                 documents.append({"text": file.read(), "source": file_path.name})
     return documents
+

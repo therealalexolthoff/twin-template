@@ -8,8 +8,8 @@ from embed import run_embeddings
 load_dotenv()
 
 CHROMA_PATH = "./chroma_db"
-COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "alex_knowledge")
-EMBED_BATCH_SIZE = 100  # keep individual API calls comfortably under any request-size limit
+COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "person_knowledge")
+EMBED_BATCH_SIZE = 100 
 
 
 def build_and_upload():

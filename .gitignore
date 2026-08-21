@@ -197,6 +197,3 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
-
-
-chunker.py
