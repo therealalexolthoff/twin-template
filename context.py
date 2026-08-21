@@ -1,10 +1,21 @@
 # This is a generic system prompt. Treat it like a template, and modify it to showcase the way you want your twin to communicate.
+from chroma_setup import get_collection
+from embed import run_embeddings
 
-topic_context = {
-    'travel': 'Person traveled to destination a for a few days. Person traveled to destination b for 2 weeks. Person traveled to destination 3 for 4 weeks. Person liked all the destinations.',
-    'favorite foods': "Person has a favorite food. Person really likes a specific quality about the food. Person also has other food they like. They like that food for other reasons.",
-    'value': "Person has several values. They include person's first value, second value, third value, and more. Person thinks their values help them in some ways.",
-}
+
+def get_context(query, n_results=8):
+    """Retrieve the most relevant chunks for a query as a single string."""
+    collection = get_collection()
+    if not collection.get()["ids"]:
+        return ""
+    query_embedding = run_embeddings(query, "RETRIEVAL_QUERY")
+    response = collection.query(
+        query_embeddings=query_embedding,
+        n_results=n_results,
+        include=["documents"],
+    )
+    return "\n".join(response["documents"][0])
+
 
 def system_prompt():
     return """
