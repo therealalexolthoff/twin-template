@@ -1,8 +1,5 @@
 # A Simple Guide For Setting Up and Deploying The Digital Chatbot
 
-
-NOTE: THIS GUIDE DOES NOT CURRENTLY WORK DUE TO MAJOR CHANGES TO THE PROJECT. IF YOU ARE READING THIS, PLEASE COME BACK TOMORROW (AUGUST 21st, 2026, AT OR AFTER 10PM EST FOR AN UPDATED GUIDE.
-
 ## Pre-Req for Everything Else
 
 Fork this repository into your own GitHub account. You'll need your own copy of it for deployment, and making a fork is the easiest way to do so.

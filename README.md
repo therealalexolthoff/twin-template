@@ -13,7 +13,11 @@ With this project, we aim to address all those concerns, so that all you need to
  
 ## Notes on Architecture
  
+<<<<<<< HEAD
 We built this template using Gradio and the Gemini via the vertex service. We set up the architecture to deploy to GCP's Cloud Run with as little work as possible.
+=======
+We built this template using Gradio and the with chat completions. We set up the architecture to deploy to GCP's Cloud Run with as little work as possible.
+>>>>>>> 835f070 (Updated Deployment guide:)
  
 As the project develops, we'll update this section and the deployment guide to reflect changes.
  
