@@ -1,23 +1,23 @@
 # A Simple Guide For Setting Up and Deploying The Digital Chatbot
 
-## Pre-Req for Everything Else
+## Pre-Requisites
 
-Fork this repository into your own GitHub account. You'll need your own copy of it for deployment, and making a fork is the easiest way to do so.
-
-## Local Set Up
+1. A Google Cloud Platform Account. If you decide to host on another platform, this will not be useful to you. If you have an older Google Cloud Platform account, we recommend creating a new one to take advantage of the $300 usage credits, which will keep your costs at 0 for at least a few months.
+2. UV installed on your computer. If you don't have uv installed, follow the guide here: https://docs.astral.sh/uv/.
+   
+## Local Setup
 
 If you want to test the chatbot on your local computer, you'll need to install it locally.
 
-Start by running `git clone https://github.com/{YOUR-GITHUB-USERNAME}/twin-template`
+Start by running `git clone https://github.com/{YOUR-GITHUB-USERNAME}/twin-template`.
 
-To set up this project environment locally, we recommend using uv.
+Once it's cloned, complete the following steps,
 
-Once you have uv installed:
-
-1. Run `gcloud auth application-default login` once — this lets the project talk to Vertex AI from your own machine the same way it will from Cloud Run.
-2. Copy `.env.example` to `.env` and fill in your project ID.
-3. Run `uv run ingest.py`. This builds a local knowledge base from the `.txt` files in `rag_data/` — nothing gets uploaded anywhere yet, it just creates a `chroma_db/` folder on your machine.
-4. Run `uv run main.py`. This installs dependencies, creates a virtual environment, and starts a local server so you can chat with your twin before deploying it.
+1. Install the gcloud cli tool (follow the guides on this page) https://docs.cloud.google.com/sdk/docs/install-sdk#mac.
+2. Run `gcloud auth application-default login` once — this lets the project talk to Vertex AI from your own machine the same way it will from Cloud Run.
+3. Copy `.env.example` to `.env` and fill in your project ID.
+4. Run `uv run ingest.py`. This builds a local knowledge base from the `.txt` files in `rag_data/` — nothing gets uploaded anywhere yet, it just creates a `chroma_db/` folder on your machine.
+5. Run `uv run main.py`. This installs dependencies, creates a virtual environment, and starts a local server so you can chat with your twin before deploying it.
 
 ## Deployment
 
