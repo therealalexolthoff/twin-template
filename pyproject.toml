@@ -13,8 +13,3 @@ dependencies = [
     "chromadb>=1.5.9",
     "google-cloud-storage>=2.18.0",
 ]
-
-[tool.uv.workspace]
-members = [
-    "chunking",
-]
