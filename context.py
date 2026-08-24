@@ -1,5 +1,5 @@
 # This is a generic system prompt. Treat it like a template, and modify it to showcase the way you want your twin to communicate.
-from chroma_setup import get_collection
+from load_vector_data import get_collection
 from embed import run_embeddings
 
 
