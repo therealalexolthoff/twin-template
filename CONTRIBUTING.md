@@ -13,7 +13,7 @@ There are two pipelines, each with its own Dockerfile and Cloud Build trigger:
  
 The two pipelines share exactly **one** module: `embed.py`, used by `ingest.py` (embedding documents) and `context.py` (embedding queries). `doc_loader.py` and `chunker.py` are used only by `ingest.py` — the serve side never touches them. When you change `embed.py`, think about **both** sides; a change to `doc_loader.py` or `chunker.py` only affects ingestion.
  
-> **Known inconsistency:** `chroma_setup.py`'s `get_collection()` is currently only used by `context.py` (serve side). `ingest.py` builds its own `chromadb.PersistentClient` and calls `get_or_create_collection()` directly instead of importing `chroma_setup`, so the same setup logic exists in two places. Consolidating `ingest.py` to reuse `chroma_setup.get_collection()` would be a good first contribution.
+> **Known inconsistency:** `load_vector_data.py`'s `get_collection()` is currently only used by `context.py` (serve side). `ingest.py` builds its own `chromadb.PersistentClient` and calls `get_or_create_collection()` directly instead of importing `load_vector_data`, so the same setup logic exists in two places. Consolidating `ingest.py` to reuse `load_vector_data.get_collection()` would be a good first contribution.
  
 ## Pipeline map
  
@@ -22,7 +22,7 @@ The two pipelines share exactly **one** module: `embed.py`, used by `ingest.py` 
 | `doc_loader.py` | Load raw documents, from either `DOCS_BUCKET` (GCS) or local `rag_data/` | `prep_docs()` returns a list of `{"text": str, "source": str}` |
 | `chunker.py` | Split text into overlapping, topic-respecting chunks | `chunk_text(text, source, ...)` returns a list of chunk dicts with a stable schema (`id`, `source`, `text`, offsets, etc.) — see the module docstring. |
 | `embed.py` | Turn text into vectors via Gemini (`gemini-embedding-001` on Vertex AI) | `run_embeddings(input, task_type)` returns a list of vectors |
-| `chroma_setup.py` | Get/create the Chroma collection, downloading the index from `INDEX_BUCKET` if it's not already local — **currently used only by `context.py` on the serve side** (see note above) | `get_collection()` returns a Chroma collection supporting `.add()`, `.query()`, `.get()` |
+| `load_vector_data.py` | Get/create the Chroma collection, downloading the index from `INDEX_BUCKET` if it's not already local — **currently used only by `context.py` on the serve side** (see note above) | `get_collection()` returns a Chroma collection supporting `.add()`, `.query()`, `.get()` |
 | `ingest.py` | Orchestrates load → chunk → embed → store → upload | `build_and_upload()`; this is what `Dockerfile.ingest` runs |
 | `context.py` | Retrieve relevant chunks for a query; hold the persona system prompt | `get_context(query, n_results)` returns a string; `system_prompt()` returns a string |
 | `main.py` | Gradio chat UI, wired to Vertex AI's Gemini chat model | This is what `Dockerfile.serve` runs |
@@ -31,11 +31,11 @@ The two pipelines share exactly **one** module: `embed.py`, used by `ingest.py` 
  
 ## The one thing that will break silently: embeddings
  
-`embed.py` is called from both `ingest.py` (embedding documents) and `context.py` (embedding a user's query). **Documents and queries have to end up in the same vector space.** If you change the embedding model, `output_dimensionality`, or `task_type` handling in `embed.py`, existing indexes become incompatible with new queries — retrieval won't error, it'll just quietly return bad or empty results. Any PR touching `embed.py` should call this out explicitly and note that a re-run of `ingest.py` is required.
+`embed.py` is called from both `ingest.py` (embedding documents) and `context.py` (embedding a user's query). **Documents and queries have to end up in the same vector space.** If you change the embedding model, `output_dimensionality`, or `task_type` handling in `embed.py`, existing indexes become incompatible with new queries; retrieval won't error, it'll just quietly return bad or empty results. Any PR touching `embed.py` should call this out explicitly and note that a re-run of `ingest.py` is required.
  
 ## Two Ways To Contribute
  
-Everything above is about the **pipeline** — how documents become a searchable index. As of now, the pipeline is stable and reliable. Contributions are welcome, but they will not substantially extend **the value** of the template.
+Everything above is about the **pipeline**: how documents become a searchable index. As of now, the pipeline is stable and reliable. Contributions are welcome, but they will not substantially extend **the value** of the template.
 
 By contrast, **chatbot feature contributions**, modular additions layered on top of `main.py`/`context.py` that change what the chatbot can *do*, without touching how it retrieves knowledge, can substantially improve the value of the template.
 
@@ -43,11 +43,11 @@ This is new territory for the project, so below is the current state of each are
  
 ### Tool calling
  
-Vertex AI's Gemini API supports function calling via `types.Tool`/`types.FunctionDeclaration`, passed into `GenerateContentConfig(tools=[...])` — `main.py` doesn't use this yet; `respond_basic()`'s config currently only sets `system_instruction` and `thinking_config`. To keep tools modular, give each one its own file (e.g. `tools/check_calendar.py`) exposing both the function and its schema, and assemble an explicit list of enabled tools before calling `client.chats.create()`, so turning a tool on or off is a one-line change rather than an edit to `respond_basic()` itself. Note that adding tools also means handling the follow-up turn where Gemini returns a function-call part and expects the result sent back — that round trip doesn't exist in `main.py` today and is part of the work, not a detail to skip.
+Vertex AI's Gemini API supports function calling via `types.Tool`/`types.FunctionDeclaration`, passed into `GenerateContentConfig(tools=[...])` — `main.py` doesn't use this yet; `respond_basic()`'s config currently only sets `system_instruction` and `thinking_config`. To keep tools modular, give each one its own file (e.g. `tools/check_calendar.py`) exposing both the function and its schema, and assemble an explicit list of enabled tools before calling `client.chats.create()`, so turning a tool on or off is a one-line change rather than an edit to `respond_basic()` itself. Note that adding tools also means handling the follow-up turn where Gemini returns a function-call part and expects the result sent back; that round trip doesn't exist in `main.py` today and is part of the work, not a detail to skip.
  
 ### Modular UI features
  
-`main.py` currently calls `gr.ChatInterface(fn=respond_basic).launch()` directly, without wrapping it in `gr.Blocks()`. That's the main thing that needs to change — `ChatInterface` itself already has two built-in extension points worth knowing about before reaching for anything more custom:
+`main.py` currently calls `gr.ChatInterface(fn=respond_basic).launch()` directly, without wrapping it in `gr.Blocks()`. That's the main thing that needs to change: `ChatInterface` itself already has two built-in extension points worth knowing about before reaching for anything more custom:
  
 - **`additional_inputs`** — a list of components (sliders, textboxes, dropdowns) rendered in an accordion next to the chat, passed as extra arguments into the chat function. This is the right fit for something like an `n_results` slider or a temperature control — no restructuring needed beyond accepting the extra argument in `respond_basic()`.
 - **`additional_outputs`** — components the chat function can also write to, as long as they're declared in the same `gr.Blocks()` scope. This is the mechanism for a "show retrieved sources" panel: declare a `gr.Markdown()`, pass it via `additional_outputs`, and have `respond_basic()` return `(streamed_text, context_string)` instead of just the streamed text.
