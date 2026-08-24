@@ -1,6 +1,6 @@
 # Contributing
  
-Thanks for your interest in contributing! This project is a **template**: the goal is for anyone to be able to fork it, personalize `context.py` and `rag_data/`, and deploy their own digital twin on GCP. Because of that, contributions should make the *template* more solid, flexible, or easier to extend — not just work for one person's specific twin.
+Thanks for your interest in contributing! This project is a **template**: the goal is for anyone to be able to fork it, personalize `context.py` and `rag_data/`, and deploy their own AI chatbot on GCP. Because of that, contributions should make the *template* more solid, flexible, or easier to extend, not just improve it  for one person's specific chatbot.
  
 ## The shape of the project
  
@@ -37,7 +37,7 @@ The two pipelines share exactly **one** module: `embed.py`, used by `ingest.py` 
  
 Everything above is about the **pipeline** — how documents become a searchable index. As of now, the pipeline is stable and reliable. Contributions are welcome, but they will not substantially extend **the value** of the template.
 
-By contrast, **chatbot feature contributions**, modular additions layered on top of `main.py`/`context.py` that change what the twin can *do*, without touching how it retrieves knowledge, can substantially improve the value of the template.
+By contrast, **chatbot feature contributions**, modular additions layered on top of `main.py`/`context.py` that change what the chatbot can *do*, without touching how it retrieves knowledge, can substantially improve the value of the template.
 
 This is new territory for the project, so below is the current state of each area and what a contribution would realistically involve.
  
@@ -68,7 +68,7 @@ with `respond_basic()` branching on the same flag to decide whether it yields ju
  
 ### Multi-modal
  
-Concrete gotcha here: `main.py`'s `extract_text()` currently discards any message part that isn't `type == "text"`. If a user uploads an image today, it's silently dropped rather than reaching Gemini — there's no error, the twin just never sees it. Making the twin multimodal means:
+Concrete gotcha here: `main.py`'s `extract_text()` currently discards any message part that isn't `type == "text"`. If a user uploads an image today, it's silently dropped rather than reaching Gemini — there's no error, the chatbot just never sees it. Making the chatbot multimodal means:
 - Switching Gradio's chat input to multimodal mode
 - Extending (or replacing) `extract_text()` to convert non-text parts into the right Vertex `Part` type (e.g. image bytes) instead of dropping them
 - Confirming the configured model (`gemini-3.5-flash-lite`) actually supports whichever modality you're adding — check Vertex AI's current docs rather than assuming, since supported modalities vary by model and change over time
