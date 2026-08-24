@@ -20,7 +20,7 @@ The two pipelines share exactly **one** module: `embed.py`, used by `ingest.py` 
 | File | Responsibility | Interface contributors should preserve |
 |---|---|---|
 | `doc_loader.py` | Load raw documents, from either `DOCS_BUCKET` (GCS) or local `rag_data/` | `prep_docs()` returns a list of `{"text": str, "source": str}` |
-| `chunker.py` | Split text into overlapping, topic-respecting chunks | `chunk_text(text, source, ...)` returns a list of chunk dicts with a stable schema (`id`, `source`, `text`, offsets, etc.) — see the module docstring below |
+| `chunker.py` | Split text into overlapping, topic-respecting chunks | `chunk_text(text, source, ...)` returns a list of chunk dicts with a stable schema (`id`, `source`, `text`, offsets, etc.) — see the module docstring. |
 | `embed.py` | Turn text into vectors via Gemini (`gemini-embedding-001` on Vertex AI) | `run_embeddings(input, task_type)` returns a list of vectors |
 | `chroma_setup.py` | Get/create the Chroma collection, downloading the index from `INDEX_BUCKET` if it's not already local — **currently used only by `context.py` on the serve side** (see note above) | `get_collection()` returns a Chroma collection supporting `.add()`, `.query()`, `.get()` |
 | `ingest.py` | Orchestrates load → chunk → embed → store → upload | `build_and_upload()`; this is what `Dockerfile.ingest` runs |
