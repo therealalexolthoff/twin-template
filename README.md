@@ -1,6 +1,8 @@
-# AI Chatbot Template
+# AI Chatbot Template (TEMPORARILY OUT OF ORDER)
+
+IF YOU ARE VISITING THIS REPOSITORY ON THURSDAY, SEPTEMBER 26TH, 2026, PLEASE NOTE THAT IT IS TEMPORARILY OUT OF ORDER. IT WILL BE RESTORED BY SEPTEMBER 5TH, 2026.
 **A Production-Ready Template**
- 
+
 This project is for those looking for a plug-and-play AI-powered chatbot. Whatever your use case, whether to represent yourself professionally or to provide a chatbot to end-users focused on answering questions in a specific domain, this is for you. Our promise is simple: you plug in your data, and you get a secure, scalable, simple-to-deploy chatbot that will run at little to no cost.
  
 ## Background of the Project
