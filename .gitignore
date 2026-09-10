@@ -197,3 +197,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local Chroma DB Instance
+chroma_db/
+
+#Temporary
+AWS/*

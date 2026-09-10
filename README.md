@@ -1,7 +1,5 @@
 # AI Chatbot Template (TEMPORARILY OUT OF ORDER)
-
-IF YOU ARE VISITING THIS REPOSITORY ON THURSDAY, SEPTEMBER 26TH, 2026, PLEASE NOTE THAT IT IS TEMPORARILY OUT OF ORDER. IT WILL BE RESTORED BY SEPTEMBER 5TH, 2026.
-**A Production-Ready Template**
+a
 
 This project is for those looking for a plug-and-play AI-powered chatbot. Whatever your use case, whether to represent yourself professionally or to provide a chatbot to end-users focused on answering questions in a specific domain, this is for you. Our promise is simple: you plug in your data, and you get a secure, scalable, simple-to-deploy chatbot that will run at little to no cost.
  
@@ -16,23 +14,3 @@ With this project, we aim to address all those concerns, so that all you need to
 ## Notes on Architecture
  
 We built this template using Gradio for the interface and Gemini via Vertex AI for both the chatbot's responses and the retrieval that grounds them in your own documents. A lightweight embedded vector database (Chroma) holds the knowledge base, so there's no separate database service to run or pay for. On GCP, this splits into two small pieces: a Cloud Run Job that builds the knowledge base from your documents, and a Cloud Run service that serves the chatbot itself — both set up to deploy with as little work as possible.
- 
-As the project develops, we'll update this section and the deployment guide to reflect changes.
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
