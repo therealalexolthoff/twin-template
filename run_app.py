@@ -1,6 +1,6 @@
 import os
 import gradio as gr
-from chat import respond_basic
+from main.chat import respond_basic
  
 if __name__ == "__main__":
     # 0.0.0.0 + $PORT is what Cloud Run expects a service to bind to.

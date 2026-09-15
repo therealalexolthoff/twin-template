@@ -1,18 +1,18 @@
 import os
 import chromadb
 from dotenv import load_dotenv
-from chunker import chunk_text
-from doc_loader import prep_docs
-from embed import run_embeddings
+from ingest.chunker import chunk_text
+from ingest.doc_loader import prep_docs
+from shared.embed import run_embeddings
 
 load_dotenv()
 
 CHROMA_PATH = "./chroma_db"
 COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "person_knowledge")
-EMBED_BATCH_SIZE = 100
+EMBED_BATCH_SIZE = 100 
 
 
-def build_index():
+def build_and_upload():
     all_chunks = []
     for doc in prep_docs():
         all_chunks.extend(chunk_text(doc["text"], doc["source"]))
@@ -43,8 +43,24 @@ def build_index():
             for c in all_chunks
         ],
     )
-    print(f"Indexed {len(all_chunks)} chunks into '{COLLECTION_NAME}' at {CHROMA_PATH}.")
+    print(f"Indexed {len(all_chunks)} chunks into '{COLLECTION_NAME}'.")
+
+    index_bucket = os.environ.get("INDEX_BUCKET")
+    if not index_bucket:
+        print("INDEX_BUCKET not set — index left at ./chroma_db only (local dev mode).")
+        return
+
+    from google.cloud import storage
+
+    client = storage.Client()
+    bucket = client.bucket(index_bucket)
+    for root, _, files in os.walk(CHROMA_PATH):
+        for fname in files:
+            local_path = os.path.join(root, fname)
+            rel_path = os.path.relpath(local_path, CHROMA_PATH)
+            bucket.blob(f"chroma_db/{rel_path}").upload_from_filename(local_path)
+    print(f"Uploaded index to gs://{index_bucket}/chroma_db/")
 
 
 if __name__ == "__main__":
-    build_index()
+    build_and_upload()

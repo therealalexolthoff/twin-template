@@ -2,6 +2,7 @@ FROM python:3.12-slim
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 WORKDIR /app
 RUN uv pip install --system --no-cache google-genai chromadb google-cloud-storage python-dotenv gradio
-COPY embed.py load_vector_data.py context.py chat.py main.py ./
-CMD ["python", "main.py"]
- 
+COPY shared/ ./shared/
+COPY main/ ./main/
+COPY run_app.py ./
+CMD ["python", "run_app.py"]

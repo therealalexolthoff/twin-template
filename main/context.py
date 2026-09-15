@@ -1,6 +1,6 @@
 # This is a generic system prompt. Treat it like a template, and modify it to showcase the way you want your twin to communicate.
-from load_vector_data import get_collection
-from embed import run_embeddings
+from main.load_vector_data import get_collection
+from shared.embed import run_embeddings
 
 
 def get_context(query, n_results=8):

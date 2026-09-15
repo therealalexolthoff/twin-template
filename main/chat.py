@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from context import system_prompt, get_context
+from main.context import system_prompt, get_context
 
 # Loads variables from a local .env file, if one exists. In Cloud Run the
 # real env vars are already set on the container, so this is a harmless
