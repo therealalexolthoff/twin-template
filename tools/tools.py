@@ -1,5 +1,5 @@
-from main.notify import send_email
-from main.dice_roll import roll_dice
+from tools.notify import send_email
+from tools.dice_roll import roll_dice
 from google.genai import types
 
 

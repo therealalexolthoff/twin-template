@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from main.context import system_prompt, get_context
-from main.tools import tools, FUNCTION_MAP
+from tools.tools import tools, FUNCTION_MAP
 
 # Loads variables from a local .env file, if one exists. In Cloud Run the
 # real env vars are already set on the container, so this is a harmless
