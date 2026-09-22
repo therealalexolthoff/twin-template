@@ -18,8 +18,7 @@ client = genai.Client(
     location=os.environ.get("CHAT_LOCATION", "us"),
 )
 
-# Maximum number of model <-> tool round trips per user message, so a
-# misbehaving loop (model keeps calling tools) can't run forever.
+#limits number of tool calls to 5
 MAX_TOOL_ROUNDS = 5
 
 
@@ -45,6 +44,7 @@ def _run_function_calls(function_calls):
         else:
             try:
                 result = func(**(fc.args or {}))
+                print(result)
             except Exception as e:
                 result = f"Error running {fc.name}: {e}"
         response_parts.append(
@@ -69,6 +69,7 @@ def respond_basic(message, history):
             )
 
     # Here Gemini is being called similarly to how the openai sdk uses chat completions. Notice that instead of having the system prompt in the summary, it is added as a separate item inside the config parameter, as the system_instruction. thinking_config allows you to set the reasoning effort of the model.
+    print(context)
     chat = client.chats.create(
         model="gemini-3.5-flash-lite",
         history=vertex_history,
@@ -96,9 +97,6 @@ def respond_basic(message, history):
                 function_calls.extend(chunk.function_calls)
 
         if not function_calls:
-            # Model gave a final text answer — nothing left to do.
             break
 
-        # Run the requested tool(s) locally, then feed the results back to
-        # the model so it can produce its final natural-language reply.
         next_message = _run_function_calls(function_calls)

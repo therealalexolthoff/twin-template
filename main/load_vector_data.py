@@ -1,7 +1,8 @@
 import os
 import chromadb
 
-CHROMA_PATH = "./chroma_db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CHROMA_PATH = os.path.join(BASE_DIR, "..", "chroma_db")
 COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "person_knowledge")
 
 _collection = None
