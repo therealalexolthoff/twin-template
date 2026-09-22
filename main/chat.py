@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from main.context import system_prompt, get_context
+from main.tools import tools, FUNCTION_MAP
 
 # Loads variables from a local .env file, if one exists. In Cloud Run the
 # real env vars are already set on the container, so this is a harmless
@@ -17,7 +18,12 @@ client = genai.Client(
     location=os.environ.get("CHAT_LOCATION", "us"),
 )
 
-#This removes the text from the gradio dictionary  
+# Maximum number of model <-> tool round trips per user message, so a
+# misbehaving loop (model keeps calling tools) can't run forever.
+MAX_TOOL_ROUNDS = 5
+
+
+# This removes the text from the gradio dictionary
 def extract_text(content):
     if isinstance(content, str):
         return content
@@ -30,8 +36,28 @@ def extract_text(content):
     return str(content)
 
 
+def _run_function_calls(function_calls):
+    response_parts = []
+    for fc in function_calls:
+        func = FUNCTION_MAP.get(fc.name)
+        if func is None:
+            result = f"Unknown function: {fc.name}"
+        else:
+            try:
+                result = func(**(fc.args or {}))
+            except Exception as e:
+                result = f"Error running {fc.name}: {e}"
+        response_parts.append(
+            types.Part.from_function_response(
+                name=fc.name,
+                response={"result": result},
+            )
+        )
+    return response_parts
+
+
 def respond_basic(message, history):
-    # When using vertex, you need to give it a list (like the messages used in openai's chat completions. However, unlike the messages in openai's chat completions, here we are using google's types module to leverage built-in classes. an instance of the Content class is roughly equivalent to a dictionary {"role": role, "content": "This is a message"}. However, you'll notice that instead of using the "content": "Some text for the message", Gemini wants parts= and then a list of jnstances of Part. This is because Gemini here needs you to specify that each part of a given message is of a specific type, either file or text.)
+    # When using vertex, you need to give it a list (like the messages used in openai's chat completions. However, unlike the messages in openai's chat completions, here we are using google's types module to leverage built-in classes. an instance of the Content class is roughly equivalent to a dictionary {"role": role, "content": "This is a message"}. However, you'll notice that instead of using the "content": "Some text for the message", Gemini wants parts= and then a list of instances of Part. This is because Gemini here needs you to specify that each part of a given message is of a specific type, either file or text.
     context = get_context(message)
     vertex_history = []
     for msg in history:
@@ -41,18 +67,38 @@ def respond_basic(message, history):
             vertex_history.append(
                 types.Content(role=role, parts=[types.Part(text=text)])
             )
-    # Here Gemini is being called similarly to how the openai sdk uses chat completions. Notice that instead of having the system prompt in the summary, it is added as a separate item inside the config paramater, as the system_instruction. thinking_config allows you to set the reasoning effort of the model.
+
+    # Here Gemini is being called similarly to how the openai sdk uses chat completions. Notice that instead of having the system prompt in the summary, it is added as a separate item inside the config parameter, as the system_instruction. thinking_config allows you to set the reasoning effort of the model.
     chat = client.chats.create(
         model="gemini-3.5-flash-lite",
         history=vertex_history,
         config=types.GenerateContentConfig(
             system_instruction=system_prompt() + context,
             thinking_config=types.ThinkingConfig(thinking_level="low"),
+            tools=tools,
+            # No automatic_function_calling here: our tools are built from
+            # FunctionDeclaration (custom descriptions/schemas), not raw
+            # Python callables, so the SDK has no function to auto-invoke.
+            # We handle function calls ourselves in the loop below instead.
         ),
     )
 
     partial = ""
-    for chunk in chat.send_message_stream(extract_text(message)):
-        if chunk.text:
-            partial += chunk.text
-            yield partial
+    next_message = extract_text(message)
+
+    for _ in range(MAX_TOOL_ROUNDS):
+        function_calls = []
+        for chunk in chat.send_message_stream(next_message):
+            if chunk.text:
+                partial += chunk.text
+                yield partial
+            if chunk.function_calls:
+                function_calls.extend(chunk.function_calls)
+
+        if not function_calls:
+            # Model gave a final text answer — nothing left to do.
+            break
+
+        # Run the requested tool(s) locally, then feed the results back to
+        # the model so it can produce its final natural-language reply.
+        next_message = _run_function_calls(function_calls)
