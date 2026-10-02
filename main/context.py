@@ -4,7 +4,6 @@ from shared.embed import run_embeddings
 
 
 def get_context(query, n_results=8):
-    """Retrieve the most relevant chunks for a query as a single string."""
     collection = get_collection()
     if not collection.get()["ids"]:
         return ""

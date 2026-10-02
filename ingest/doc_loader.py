@@ -19,7 +19,8 @@ def prep_docs():
         return documents
 
     documents = []
-    folder_path = Path("./rag_data")
+    base_dir = Path(__file__).resolve().parent
+    folder_path = base_dir / ".." / "rag_data"
     for file_path in folder_path.iterdir():
         if file_path.is_file():
             print(f"Reading: {file_path.name}")
