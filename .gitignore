@@ -203,3 +203,5 @@ chroma_db/
 
 #Temporary
 AWS/*
+# Leftover temporary build folders from run_ingest.py
+chroma_build_*/

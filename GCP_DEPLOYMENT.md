@@ -1,8 +1,8 @@
-# A Simple Guide For Setting Up and Deploying The Digital Chatbot
+# A Simple Guide For Setting Up and Deploying Your AI Chatbot
 
 ## Pre-Requisites
 
-1. A Google Cloud Platform Account. If you decide to host on another platform, this will not be useful to you. If you have an older Google Cloud Platform account, we recommend creating a new one to take advantage of the $300 usage credits, which will keep your costs at 0 for at least a few months.
+1. A Google Cloud Platform Account. If you decide to host on another platform, this will not be useful to you. If you have an older Google Cloud Platform account, we recommend creating a new one to take advantage of the $300 usage credits, which will keep your costs at 0 for the first three months.
 2. UV installed on your computer. If you don't have uv installed, follow the guide here: https://docs.astral.sh/uv/.
    
 ## Local Setup
@@ -15,9 +15,9 @@ Once it's cloned, complete the following steps,
 
 1. Install the gcloud cli tool (follow the guides on this page) https://docs.cloud.google.com/sdk/docs/install-sdk#mac.
 2. Run `gcloud auth application-default login` once — this lets the project talk to Vertex AI from your own machine the same way it will from Cloud Run.
-3. Copy `.env.example` to `.env` and fill in your project ID.
-4. Run `uv run ingest.py`. This builds a local knowledge base from the `.txt` files in `rag_data/` — nothing gets uploaded anywhere yet, it just creates a `chroma_db/` folder on your machine.
-5. Run `uv run main.py`. This installs dependencies, creates a virtual environment, and starts a local server so you can chat with your twin before deploying it.
+3. Create a `.env` file in the repo root containing `PROJECT_ID=your-project-id`.
+4. Run `uv run run_ingest.py`. This builds a local knowledge base from the `.txt` files in `rag_data/` — nothing gets uploaded anywhere yet, it just creates a `chroma_db/` folder on your machine.
+5. Run `uv run run_app.py`. This installs dependencies, creates a virtual environment, and starts a local server so you can chat with your twin before deploying it.
 
 ## Deployment
 
@@ -25,7 +25,7 @@ The project is already set up to deploy on GCP Cloud Run.
 
 If you do not have a GCP account, [sign up for an account](https://cloud.google.com/free).
 
-You are welcome to deploy on any other cloud platform of your choice, but we strongly recommend GCP for reasons documented in [Architectural Justifications](ARCHITECTURE.md).
+You are welcome to deploy on any other cloud platform of your choice, but we strongly recommend GCP for reasons documented in [Why We Recommend GCP](ARCHITECTURE.md).
 
 Once your account is created, you'll need to provide a payment method. You'll then be redirected to a project page, where you can configure your project.
 
@@ -33,13 +33,13 @@ Now you'll be able to follow the steps below. There are more of them than you mi
 
 ## Part 1 — Personalize your chatbot
 
-1. In your forked repo, click **context.py** to open it.
+1. In your forked repo, open the `main/` folder and click **context.py** to open it.
 2. Click the **pencil (edit) icon** in the top-right of the file view.
 3. Replace the placeholder details in `system_prompt()` with real information about yourself — your name, what you do, your skills, hobbies, goals, and how you communicate.
 4. Scroll down and click **Commit changes**.
 5. Now add your actual knowledge base: in the `rag_data/` folder, add `.txt` files with whatever information you want your twin to be able to answer questions about — your résumé, blog posts, notes about your projects, anything. Use GitHub's **Add file → Create new file** button for each one.
 
-`main.py`, `chunker.py`, `embed.py`, and `pyproject.toml` are already set up correctly in the template — you don't need to touch them.
+Everything else — `main/chat.py`, `ingest/chunker.py`, `shared/embed.py`, `pyproject.toml`, and so on — is already set up correctly in the template — you don't need to touch them.
 
 ## Part 2 — Create your two Cloud Storage buckets and upload your documents
 
@@ -55,7 +55,7 @@ The chatbot needs two Cloud Storage buckets: one holding your source documents, 
 
 ## Part 3 — Give your project permission to use Vertex AI and your buckets
 
-Unlike the OpenAI version of this template, there's no API key to create or store here — Vertex AI authenticates through Google Cloud's own permission system (IAM), using the identity already attached to whatever's making the request. That identity just needs to be told it's allowed to do a few things.
+Unlike many AI APIs, there's no API key to create or store here — Vertex AI authenticates through Google Cloud's own permission system (IAM), using the identity already attached to whatever's making the request. That identity just needs to be told it's allowed to do a few things.
 
 1. Note your project number — it's shown in the **Project info** card on the console's **Home/Dashboard** page.
 2. Use the search bar to navigate to **IAM & Admin → IAM**.
@@ -64,10 +64,19 @@ Unlike the OpenAI version of this template, there's no API key to create or stor
    ```
    YOUR_PROJECT_NUMBER-compute@developer.gserviceaccount.com
    ```
-5. For **Role**, choose **Vertex AI User**, then click **+ Add another role** and also add **Storage Object Admin**.
+5. For **Role**, choose **Vertex AI User**, then click **+ Add another role** and also add **Storage Object Admin**, then once more to add **Model Armor User**.
 6. Click **Save**.
 
 > **Why Storage Object Admin on IAM, rather than per-bucket?** It's simpler for a personal project to grant it once at the project level. If you'd rather scope it tightly to just these two buckets, you can instead open each bucket's **Permissions** tab and grant access there individually — either works.
+
+## Part 3.5 — Set up Model Armor
+
+Every message a user sends is screened by Model Armor before it reaches Gemini, so attempts to jailbreak the chatbot or inject instructions get rejected. This needs a Model Armor template the chatbot can check prompts against.
+
+1. Search **Model Armor** and enable the Model Armor API if prompted.
+2. Click **Create template**.
+3. Template ID: `twin-model-armor`. Region: `us-east4`. These are the defaults the chatbot looks for — if you pick a different ID or region, set `MODEL_ARMOR_TEMPLATE` and/or `MODEL_ARMOR_LOCATION` on the service in Part 6.
+4. Turn on **Prompt injection and jailbreak detection**, plus any other filters you want, then click **Create**.
 
 ## Part 4 — Connect your repo and build both container images
 
@@ -119,6 +128,13 @@ This is the piece that actually reads your documents, turns them into a searchab
    - `LOCATION` = your region
    - `CHAT_LOCATION` = `us` (or `eu` if you're in Europe) — this is a separate setting from `LOCATION` above, because the chat model runs on a different kind of region than the embedding model does
    - `INDEX_BUCKET` = your index bucket name
+   - Optional, only if your Model Armor template from Part 3.5 doesn't use the defaults:
+     - `MODEL_ARMOR_LOCATION` = the template's region (default `us-east4`)
+     - `MODEL_ARMOR_TEMPLATE` = the template ID (default `twin-model-armor`)
+   - Optional, to let the chatbot email you messages from visitors (via [Resend](https://resend.com)):
+     - `RESEND_API_KEY` = your Resend API key
+     - `NOTIFY_EMAIL` = the address the messages should go to
+     - `RESEND_FROM` = the sender, e.g. `Your Name Twin <onboarding@resend.dev>`
 6. Under **Containers → Resources**, set memory to at least 2 GiB.
 7. Under **Autoscaling**, leave minimum instances at 0 — this is what keeps the chatbot free to run when nobody's using it.
 8. Click **Create**.
