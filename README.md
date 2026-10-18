@@ -6,12 +6,12 @@ This project is for those looking for a plug-and-play AI-powered chatbot. Whatev
  
 This project was created in response to Hugging Face's abrupt decision to charge new users for Spaces that use the Gradio SDK.
  
-One member of the Hugging Face community put together a great [list of alternatives](https://discuss.huggingface.co/t/official-community-complaint-revert-free-cpu-basic-spaces-and-remove-anti-developer-sdk-restrictions/177703/10#p-260365-h-1-streamlit-community-cloud-streamlitiocloud-1) for hosting a digital twin/chatbot, but none of them are built for scalable, out-of-the-box use. Instead, they're primarily hosting atlernatives to Hugging Face. You'll still have to write all the code to make the chatbot work, and it may or may not scale well, be secure, or have the functionality you want.
+One member of the Hugging Face community put together a great [list of alternatives](https://discuss.huggingface.co/t/official-community-complaint-revert-free-cpu-basic-spaces-and-remove-anti-developer-sdk-restrictions/177703/10#p-260365-h-1-streamlit-community-cloud-streamlitiocloud-1) for hosting a digital twin/chatbot, but none of them are built for scalable, out-of-the-box use. Instead, they're primarily hosting alternatives to Hugging Face. You'll still have to write all the code to make the chatbot work, and it may or may not scale well, be secure, or have the functionality you want.
  
-With this project, we aim to address all those concerns, so that all you need to do is follow the steps in the Deployment guide and you'll have your own production build ready in less than a day.
+With this project, we aim to address all those concerns, so that all you need to do is follow the steps in the [Deployment guide](GCP_DEPLOYMENT.md) and you'll have your own production build ready in less than a day.
  
 ## Notes on Architecture
  
-We built this template using Gradio for the interface and Gemini via Vertex AI for both the chatbot's responses and the retrieval that grounds them in your own documents. A lightweight embedded vector database (Chroma) holds the knowledge base, so there's no separate database service to run or pay for. On GCP, this splits into two small pieces: a Cloud Run Job that builds the knowledge base from your documents, and a Cloud Run service that serves the chatbot itself — both set up to deploy with as little work as possible.
+We built this template using Gradio for the interface and Gemini via Vertex AI (now branded Gemini Enterprise Agent Platform) for both the chatbot's responses and the retrieval that grounds them in your own documents. A lightweight embedded vector database (Chroma) holds the knowledge base, so there's no separate database service to run or pay for. On GCP, this splits into two small pieces: a Cloud Run Job that builds the knowledge base from your documents, and a Cloud Run service that serves the chatbot itself — both set up to deploy with as little work as possible.
 
-Currently the template uses tool calling with Vertex Gemini Enterprise Studio. 
+The chatbot also supports tool calling — out of the box it can play a dice game and email you messages from visitors — and screens every user message with Model Armor before it reaches Gemini. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add your own tools.

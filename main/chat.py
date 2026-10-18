@@ -4,6 +4,7 @@ from google import genai
 from google.genai import types
 from main.context import system_prompt, get_context
 from tools.tools import tools, FUNCTION_MAP
+from main.security import check_user_prompt
 
 # Loads variables from a local .env file, if one exists. In Cloud Run the
 # real env vars are already set on the container, so this is a harmless
@@ -58,7 +59,13 @@ def _run_function_calls(function_calls):
 
 def respond_basic(message, history):
     # When using vertex, you need to give it a list (like the messages used in openai's chat completions. However, unlike the messages in openai's chat completions, here we are using google's types module to leverage built-in classes. an instance of the Content class is roughly equivalent to a dictionary {"role": role, "content": "This is a message"}. However, you'll notice that instead of using the "content": "Some text for the message", Gemini wants parts= and then a list of instances of Part. This is because Gemini here needs you to specify that each part of a given message is of a specific type, either file or text.
-    context = get_context(message)
+    #another note: check_user_prompt uses model armor to check and make sure the user prompt is actually safe, and doesn't try to jail break the llm, speak rudely, or attempt prompt injection. If the user does attempt any of these, they will get a notice.
+    message_text = extract_text(message)
+    unsafe_message = check_user_prompt(message_text)
+    if unsafe_message:
+        yield unsafe_message
+        return
+    context = get_context(message_text)
     vertex_history = []
     for msg in history:
         role = "model" if msg["role"] == "assistant" else "user"
@@ -69,7 +76,6 @@ def respond_basic(message, history):
             )
 
     # Here Gemini is being called similarly to how the openai sdk uses chat completions. Notice that instead of having the system prompt in the summary, it is added as a separate item inside the config parameter, as the system_instruction. thinking_config allows you to set the reasoning effort of the model.
-    print(context)
     chat = client.chats.create(
         model="gemini-3.5-flash-lite",
         history=vertex_history,
@@ -85,7 +91,7 @@ def respond_basic(message, history):
     )
 
     partial = ""
-    next_message = extract_text(message)
+    next_message = message_text
 
     for _ in range(MAX_TOOL_ROUNDS):
         function_calls = []
@@ -99,4 +105,5 @@ def respond_basic(message, history):
         if not function_calls:
             break
 
-        next_message = _run_function_calls(function_calls)
+        tool_parts = _run_function_calls(function_calls)
+        next_message = types.Content(role="user", parts=tool_parts)
